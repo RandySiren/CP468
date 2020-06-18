@@ -30,18 +30,18 @@ def main():
     # goal, exp, parentMap, path = bfs(maze, start)
 
     # depth first search
-    #goal, exp, parentMap, path = dfs(maze, start)
+    # goal, exp, parentMap, path = dfs(maze, start)
 
     # best first search
     # goal, exp, parentMap, path = best_first_search(maze, start, goal)
 
     # A*
-    path = Astar(maze, start, goal)
+    path, exp = Astar(maze, start, goal)
     # Location of the goal, total nodes expanded, and parent map of graph vertices
     cost = len(path)-1
     print("\nSearch finished\n")
     print("Cost:", cost)
-    # print("Exp:", exp)
+    print("Exp:", exp)
     print("Path:", path)
     # Displaying maze again will show which locations on the grid the search visited
     print("\nNew Maze After Search:")
@@ -197,6 +197,8 @@ def Astar(maze, start, end):
     open_list = []
     closed_list = []
 
+    exp = 1
+
     # Generate heap and push start
     heapq.heapify(open_list)
     heapq.heappush(open_list, start_node)
@@ -209,7 +211,7 @@ def Astar(maze, start, end):
 
         # Reached end
         if current_node == end_node:
-            return return_path(current_node, maze)
+            return return_path(current_node, maze), exp
 
         # Generate children nodes
         children = []
@@ -239,7 +241,7 @@ def Astar(maze, start, end):
                 continue
 
             heapq.heappush(open_list, child)
-
+            exp += 1
     return None
 
 
