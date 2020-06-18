@@ -1,18 +1,26 @@
 from collections import deque
+# heap queue for A* algorithm
+import heapq
 # deque = double ended queue, used to represent stacks and queues with O(1) insert/remove operations on both ends
 from queue import PriorityQueue
 # Priority Queue for best first search
-class Node():
-    def __init__(self, parent=None, position=None):
-        self.parent = parent
-        self.position = position
 
+class Node():
+    def __init__(self, parent=None, pos=None):
+        self.parent = parent
+        self.pos = pos
         self.g = 0
         self.h = 0
         self.f = 0
 
     def __eq__(self, other):
-        return self.position == other.position
+        return self.pos == other.pos
+
+    def __lt__(self, other):
+      return self.f < other.f
+
+    def __gt__(self, other):
+      return self.f > other.f
 
 def main():
     maze, start, goal = read_maze("maze.txt")
@@ -25,20 +33,19 @@ def main():
     #goal, exp, parentMap, path = dfs(maze, start)
 
     # best first search
-    #goal, exp, parentMap, path = best_first_search(maze, start, goal)
+    # goal, exp, parentMap, path = best_first_search(maze, start, goal)
 
     # A*
-    # goal, exp, parentMap, path = Astar(maze, start, goal)
     path = Astar(maze, start, goal)
     # Location of the goal, total nodes expanded, and parent map of graph vertices
-    # cost = len(path)-1
-    # print("\nSearch finished\n")
-    # print("Cost:", cost)
+    cost = len(path)-1
+    print("\nSearch finished\n")
+    print("Cost:", cost)
     # print("Exp:", exp)
-    # print("Path:", path)
-    # # Displaying maze again will show which locations on the grid the search visited
-    # print("\nNew Maze After Search:")
-    # displayMaze(maze)
+    print("Path:", path)
+    # Displaying maze again will show which locations on the grid the search visited
+    print("\nNew Maze After Search:")
+    displayMaze(maze)
 
 
 def read_maze(filename):
@@ -79,111 +86,6 @@ def adj(maze, parentMap, loc):
                 parentMap[(nRow, nCol)] = (row, col)
     return adj_p
 
-def Astar(maze, start, goal):
-   start_node = Node(None, start)
-   start_node.g = start_node.h = start_node.f = 0
-   end_node = Node(None, goal)
-   end_node.g = end_node.h = end_node.f = 0
-
-   # Initialize both open and closed lists
-   open_list = []
-   closed_list = []
-
-   # Add the start node
-   open_list.append(start_node)
-
-   # Loop until we find the end
-   while len(open_list) > 0:
-
-       # Get the current node by seeing which has the lowest f value
-        current_node = open_list[0]
-        current_index = 0
-        for index, item in enumerate(open_list):
-           if item.f < current_node.f:
-               current_node = item
-               current_index = index
-
-        # Pop current off open list, add to closed list
-        open_list.pop(current_index)
-        closed_list.append(current_node)
-
-        # Found the goal
-        if current_node == end_node:
-            path = []
-            current = current_node
-            while current is not None:
-                path.append(current.position)
-                current = current.parent
-            return path[::-1]
-
-        # Generate children
-        children = []
-        for new_position in [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)]: # Adjacent squares
-
-            # Get node position
-            node_position = (current_node.position[0] + new_position[0], current_node.position[1] + new_position[1])
-
-            # Make sure within range
-            if node_position[0] > (len(maze) - 1) or node_position[0] < 0 or node_position[1] > (len(maze[len(maze)-1]) -1) or node_position[1] < 0:
-                continue
-
-            # Make sure walkable terrain
-            if maze[node_position[0]][node_position[1]] != "%":
-                continue
-
-            # Create new node
-            new_node = Node(current_node, node_position)
-
-            # Append
-            children.append(new_node)
-
-        # Loop through children
-        for child in children:
-
-            # Child is on the closed list
-            for closed_child in closed_list:
-                if child == closed_child:
-                    continue
-
-            # Create the f, g, and h values
-            child.g = current_node.g + 1
-            child.h = ((child.position[0] - end_node.position[0]) ** 2) + ((child.position[1] - end_node.position[1]) ** 2)
-            child.f = child.g + child.h
-
-            # Child is already in the open list
-            for open_node in open_list:
-                if child == open_node and child.g > open_node.g:
-                    continue
-
-            # Add the child to the open list
-            open_list.append(child)
-
-
-# def Astar(maze, start, goal):
-#     pq = PriorityQueue(100)
-#     parentMap = {}
-#     row, col = start
-#     parentMap[start] = None
-#     exp = 1
-#     heuristic = manhattan(start, goal)
-#     pq.put((1, start))
-#     while not pq.empty():
-#         weight, location = pq.get()
-#         adj_p = adj(maze, parentMap, location)
-#         for nRow, nCol in adj_p:
-#             if manhattan((nRow, nCol), goal) <= heuristic+1:
-#                 # If we found our goal
-#                 if maze[nRow][nCol] == '.':
-#                     # Return the goal, total nodes expanded, and map of parent nodes to extract path
-#                     path = getPath(maze, parentMap, start, (nRow, nCol))
-#                     return (nRow, nCol), exp, parentMap, path
-#                 elif maze[nRow][nCol] == ' ':
-#                     pq.put((1, (nRow, nCol)))
-#                     exp += 1
-#     return(-1, -1), -1, -1
-#     cost = 1
-
-
 def manhattan(start, goal):
     # Heuristic function
     return abs(start[0] - goal[0]) + abs(start[1]-goal[1])
@@ -200,6 +102,15 @@ def getPath(maze, pMap, start, goal):
         curr = pMap[curr]
     return path
 
+
+def return_path(current_node, maze):
+    path = []
+    current = current_node
+    while current is not None:
+        maze[current.pos[0]][current.pos[1]] = '.'
+        path.append(current.pos)
+        current = current.parent
+    return path[::-1]
 
 def best_first_search(maze, start, goal):
     pq = PriorityQueue(100)
@@ -273,6 +184,63 @@ def bfs(maze, start):  # Iterative breadth first search using a queue
                 q.append((nRow, nCol))
                 exp += 1
     return(-1, -1), -1, -1  # Error
+
+
+def Astar(maze, start, end):
+    # Create start and end nodes
+    start_node = Node(None, start)
+    start_node.g = start_node.h = start_node.f = 0
+    end_node = Node(None, end)
+    end_node.g = end_node.h = end_node.f = 0
+
+    # Initialize lists
+    open_list = []
+    closed_list = []
+
+    # Generate heap and push start
+    heapq.heapify(open_list)
+    heapq.heappush(open_list, start_node)
+
+    # while open_list heap is not empty
+    while len(open_list) > 0:
+
+        current_node = heapq.heappop(open_list)
+        closed_list.append(current_node)
+
+        # Reached end
+        if current_node == end_node:
+            return return_path(current_node, maze)
+
+        # Generate children nodes
+        children = []
+        for new_position in ((0, -1), (0, 1), (-1, 0), (1, 0)):
+
+            node_position = (current_node.pos[0] + new_position[0], current_node.pos[1] + new_position[1])
+
+            if node_position[0] > (len(maze) - 1) or node_position[0] < 0 or node_position[1] > (len(maze[len(maze)-1]) -1) or node_position[1] < 0:
+                continue
+
+            if maze[node_position[0]][node_position[1]] not in " .P":
+                continue
+            new_node = Node(current_node, node_position)
+            children.append(new_node)
+
+        # Loop through children
+        for child in children:
+            # Child is on the closed list
+            if len([closed_child for closed_child in closed_list if closed_child == child]) > 0:
+                continue
+
+            child.g = current_node.g + 1
+            child.h = manhattan(child.pos, end_node.pos)
+            child.f = child.g + child.h
+
+            if len([open_node for open_node in open_list if child.pos == open_node.pos and child.g > open_node.g]) > 0:
+                continue
+
+            heapq.heappush(open_list, child)
+
+    return None
 
 
 def displayMaze(maze):  # Helper function that prints a 2d maze array
