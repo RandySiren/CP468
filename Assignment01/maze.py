@@ -67,7 +67,6 @@ def read_maze(filename):
                 maze[row].append(char)
         line = fv.readline()
         row += 1
-    print(maze)
     return maze, startP, goal
 
 
